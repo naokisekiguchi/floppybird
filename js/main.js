@@ -59,18 +59,41 @@ var loopGameloop;
 var loopPipeloop;
 
 $(document).ready(function() {
-   if(window.location.search == "?debug")
-      debugmode = true;
-   if(window.location.search == "?easy")
-      pipeheight = 200;
+  navigator.requestGPIOAccess().then(
+   function(gpioAccess) {
+       console.log("GPIO ready!");
+       return gpioAccess;
+   }).then(gpio=>{
+     var buttonPort = gpio.ports.get(199);
+     return Promise.all([
+       buttonPort.export("in")
+     ]).then(()=>{
+       var firsttime = true;
+       buttonPort.onchange = function(v){
+         if(!firsttime){
+           if(replayclickable){
+             replay();
+           }
+           screenClick();
+         }
+         firsttime = false;
+       }
+     });
+ }).catch(error=>{
+   console.log("Failed to get GPIO access catch: " + error.message);
+ });
+ if(window.location.search == "?debug")
+    debugmode = true;
+ if(window.location.search == "?easy")
+    pipeheight = 200;
 
-   //get the highscore
-   var savedscore = getCookie("highscore");
-   if(savedscore != "")
-      highscore = parseInt(savedscore);
+ //get the highscore
+ var savedscore = getCookie("highscore");
+ if(savedscore != "")
+    highscore = parseInt(savedscore);
 
-   //start with the splash screen
-   showSplash();
+ //start with the splash screen
+ showSplash();
 });
 
 function getCookie(cname)
@@ -444,7 +467,7 @@ function showScore()
    replayclickable = true;
 }
 
-$("#replay").click(function() {
+function replay() {
    //make sure we can only click once
    if(!replayclickable)
       return;
@@ -463,7 +486,8 @@ $("#replay").click(function() {
       //start the game over!
       showSplash();
    });
-});
+}
+$("#replay").click(replay);
 
 function playerScore()
 {
