@@ -1,0 +1,13 @@
+{
+  "name": "floppybird-chirimen",
+  "description": "floppybird chirimen edition",
+  "type": "certified",
+  "launch_path": "/index.html",
+  "developer": {
+    "name": "Nebez Briefkani",
+    "url": "https://github.com/nebez/floppybird"
+  },
+  "icons": {
+    "128": "/style/icons/sensor.png"
+  }
+}
