@@ -57,8 +57,19 @@ buzz.all().setVolume(volume);
 //loops
 var loopGameloop;
 var loopPipeloop;
+var loopController;
 
+//controller
+var controller;
 $(document).ready(function() {
+  controller = new Controller({
+    "pipeheight":pipeheight,
+    "jump":jump,
+    "gravity":gravity
+  });
+  console.log(controller.config);
+  console.log(controller.config.pipeheight);
+
   navigator.requestGPIOAccess().then(
    function(gpioAccess) {
        console.log("GPIO ready!");
@@ -79,21 +90,35 @@ $(document).ready(function() {
          firsttime = false;
        }
      });
- }).catch(error=>{
+  }).catch(error=>{
    console.log("Failed to get GPIO access catch: " + error.message);
- });
- if(window.location.search == "?debug")
-    debugmode = true;
- if(window.location.search == "?easy")
-    pipeheight = 200;
+  });
 
- //get the highscore
- var savedscore = getCookie("highscore");
- if(savedscore != "")
+  controller.onScreenClick = screenClick();
+  controller.initSensors().then(()=>{
+    console.log("resolve");
+    loopController = setInterval(function(){
+      controller.getSensor().then((values)=>{
+        if(controller.controller(values)){
+          screenClick();
+        }
+      });
+    },1000);
+  });
+
+
+  if(window.location.search == "?debug")
+    debugmode = true;
+  if(window.location.search == "?easy")
+    controller.config.pipeheight = 200;
+
+  //get the highscore
+  var savedscore = getCookie("highscore");
+  if(savedscore != "")
     highscore = parseInt(savedscore);
 
- //start with the splash screen
- showSplash();
+  //start with the splash screen
+  showSplash();
 });
 
 function getCookie(cname)
@@ -186,7 +211,7 @@ function gameloop() {
    var player = $("#player");
 
    //update the player speed/position
-   velocity += gravity;
+   velocity += controller.config.gravity;
    position += velocity;
 
    //update the player
@@ -237,14 +262,14 @@ function gameloop() {
    var pipetop = nextpipeupper.offset().top + nextpipeupper.height();
    var pipeleft = nextpipeupper.offset().left - 2; // for some reason it starts at the inner pipes offset, not the outer pipes.
    var piperight = pipeleft + pipewidth;
-   var pipebottom = pipetop + pipeheight;
+   var pipebottom = pipetop + controller.config.pipeheight;
 
    if(debugmode)
    {
       var boundingbox = $("#pipebox");
       boundingbox.css('left', pipeleft);
       boundingbox.css('top', pipetop);
-      boundingbox.css('height', pipeheight);
+      boundingbox.css('height', controller.config.pipeheight);
       boundingbox.css('width', pipewidth);
    }
 
@@ -310,7 +335,7 @@ function screenClick()
 
 function playerJump()
 {
-   velocity = jump;
+   velocity = controller.config.jump;
    //play jump sound
    if(soundMode){
      soundJump.stop();
@@ -507,9 +532,9 @@ function updatePipes()
 
    //add a new pipe (top height + bottom height  + pipeheight == flyArea) and put it in our tracker
    var padding = 80;
-   var constraint = flyArea - pipeheight - (padding * 2); //double padding (for top and bottom)
+   var constraint = flyArea - controller.config.pipeheight - (padding * 2); //double padding (for top and bottom)
    var topheight = Math.floor((Math.random()*constraint) + padding); //add lower padding
-   var bottomheight = (flyArea - pipeheight) - topheight;
+   var bottomheight = (flyArea - controller.config.pipeheight) - topheight;
    var newpipe = $('<div class="pipe animated"><div class="pipe_upper" style="height: ' + topheight + 'px;"></div><div class="pipe_lower" style="height: ' + bottomheight + 'px;"></div></div>');
    $("#flyarea").append(newpipe);
    pipes.push(newpipe);
