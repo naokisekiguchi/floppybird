@@ -18,10 +18,18 @@ Sensor.prototype = {
         // I2C 0 ポートを使うので、0 を指定してポートを取得
         self.port = accessor.ports.get(0);
         if(self.settings.light){
-          yield self.groveLightInit(self.port,0x29);
+          try{
+            yield self.groveLightInit(self.port,0x29);
+          }catch(e){
+            self.settings.light = false;
+          }
         }
         if(self.settings.accelerometer){
-          yield self.groveAccelerometerInit(self.port,0x53);
+          try{
+            yield self.groveAccelerometerInit(self.port,0x53);
+          }catch(e){
+            self.settings.accelerometer = false;
+          }
         }
         resolve();
       });
@@ -33,35 +41,59 @@ Sensor.prototype = {
       spawn(function(){
         const values = new Object();
         if(self.settings.temp){
-          const temp = yield self.getTemp(port,0x48);
-          console.log("temp: "+temp);
-          values.temp = temp;
+          try{
+            const temp = yield self.getTemp(port,0x48);
+            console.log("temp: "+temp);
+            values.temp = temp;
+          }catch(e){
+            self.settings.temp = false;
+          }
         }
         if(self.settings.distance){
-          const distance = yield self.getDistance(port,0x70);
-          console.log("distance: "+distance);
-          values.distance = distance;
+          try{
+            const distance = yield self.getDistance(port,0x70);
+            console.log("distance: "+distance);
+            values.distance = distance;
+          }catch(e){
+            self.settings.distance = false;
+          }
         }
         if(self.settings.light){
-          const lux = yield self.getLight(self.port,0x29);
-          console.log("lux: "+lux);
-          values.light = lux;
+          try{
+            const lux = yield self.getLight(self.port,0x29);
+            console.log("lux: "+lux);
+            values.light = lux;
+          }catch(e){
+            self.settings.light = false;
+          }
         }
         if(self.settings.accelerometer){
-          const accelerometer = yield self.getAccelerometer(self.port,0x53);
-          console.log("accelerometer: " + accelerometer.x + ","+ accelerometer.y + ","+ accelerometer.z);
-          values.accelerometer = accelerometer;
+          try{
+            const accelerometer = yield self.getAccelerometer(self.port,0x53);
+            console.log("accelerometer: " + accelerometer.x + ","+ accelerometer.y + ","+ accelerometer.z);
+            values.accelerometer = accelerometer;
+          }catch(e){
+            self.settings.accelerometer = false;
+          }
         }
         if(self.settings.color){
-          //ToDo get color value
-          const color = null;
-          console.log("color: "+color);
-          values.color = color;
+          try{
+            //ToDo get color value
+            const color = null;
+            console.log("color: "+color);
+            values.color = color;
+          }catch(e){
+            self.settings.color = false;
+          }
         }
         if(self.settings.touch){
-          const touch = null;
-          console.log("accelerometer: " + accelerometer.x + ","+ accelerometer.y + ","+ accelerometer.z);
-          values.touch = touch;
+          try{
+            const touch = null;
+            console.log("accelerometer: " + accelerometer.x + ","+ accelerometer.y + ","+ accelerometer.z);
+            values.touch = touch;
+          }catch(e){
+            self.settings.touch = false;
+          }
         }
 
         resolve(values);
@@ -71,18 +103,22 @@ Sensor.prototype = {
   groveLightInit:function(port,addr){
     return new Promise(function(resolve,reject){
       spawn(function(){
-        const slave = yield port.open(addr);
+        try{
+          const slave = yield port.open(addr);
 
-        yield slave.write8(0x80,0x03);
-        yield sleep(10);
-        yield slave.write8(0x81,0x00);
-        yield sleep(14);
-        yield slave.write8(0x86,0x00);
-        yield sleep(10);
-        yield slave.write8(0x80,0x00);
-        yield sleep(10);
+          yield slave.write8(0x80,0x03);
+          yield sleep(10);
+          yield slave.write8(0x81,0x00);
+          yield sleep(14);
+          yield slave.write8(0x86,0x00);
+          yield sleep(10);
+          yield slave.write8(0x80,0x00);
+          yield sleep(10);
 
-        resolve();
+          resolve();
+        }catch(e){
+          reject();
+        }
 
       });
     });
@@ -91,23 +127,27 @@ Sensor.prototype = {
     const self=this;
     return new Promise(function(resolve,reject){
       spawn(function(){
-        const slave = yield port.open(addr);
+        try{
+          const slave = yield port.open(addr);
 
-        yield slave.write8(0x80,0x03);
-        yield sleep(14);
+          yield slave.write8(0x80,0x03);
+          yield sleep(14);
 
 
-        const ch0H = yield slave.read8(0x8d,true);
-        const ch0L = yield slave.read8(0x8c,true);
-        const ch1H = yield slave.read8(0x8f,true);
-        const ch1L = yield slave.read8(0x8e,true);
+          const ch0H = yield slave.read8(0x8d,true);
+          const ch0L = yield slave.read8(0x8c,true);
+          const ch1H = yield slave.read8(0x8f,true);
+          const ch1L = yield slave.read8(0x8e,true);
 
-        const ch0 = ((ch0H << 8) | ch0L);
-        const ch1 = ((ch1H << 8) | ch1L);
+          const ch0 = ((ch0H << 8) | ch0L);
+          const ch1 = ((ch1H << 8) | ch1L);
 
-        const lux = self.calculateLux(ch0,ch1,0,0,0);
+          const lux = self.calculateLux(ch0,ch1,0,0,0);
 
-        resolve(lux);
+          resolve(lux);
+        }catch(e){
+          reject();
+        }
 
       });
     });
@@ -168,60 +208,67 @@ Sensor.prototype = {
   groveAccelerometerInit:function(port,addr){
     return new Promise(function(resolve,reject){
       spawn(function(){
-        const slave = yield port.open(addr);
+        try{
+          const slave = yield port.open(addr);
 
-        yield slave.write8(0x2d,0x00);
-        yield sleep(10);
-        yield slave.write8(0x2d,0x16);
-        yield sleep(10);
-        yield slave.write8(0x2d,0x08);
-        yield sleep(10);
+          yield slave.write8(0x2d,0x00);
+          yield sleep(10);
+          yield slave.write8(0x2d,0x16);
+          yield sleep(10);
+          yield slave.write8(0x2d,0x08);
+          yield sleep(10);
 
-        resolve();
-
+          resolve();
+        }catch(e){
+          reject();
+        }
       });
     });
   },
   getAccelerometer:function(port,addr){
     return new Promise(function(resolve,reject){
       spawn(function(){
-        const slave = yield port.open(addr);
+        try{
+          const slave = yield port.open(addr);
 
-        yield slave.write8(0x80,0x03);
-        yield sleep(14);
+          yield slave.write8(0x80,0x03);
+          yield sleep(14);
 
-        const xL = yield slave.read8(0x32,true);
-        const xH = yield slave.read8(0x33,true);
-        const yL = yield slave.read8(0x34,true);
-        const yH = yield slave.read8(0x35,true);
-        const zL = yield slave.read8(0x36,true);
-        const zH = yield slave.read8(0x37,true);
+          const xL = yield slave.read8(0x32,true);
+          const xH = yield slave.read8(0x33,true);
+          const yL = yield slave.read8(0x34,true);
+          const yH = yield slave.read8(0x35,true);
+          const zL = yield slave.read8(0x36,true);
+          const zH = yield slave.read8(0x37,true);
 
-        let x = xL + (xH << 8);
-        if(x & (1 << 16 - 1)){x = x - (1<<16);}
-        let y = yL + (yH << 8);
-        if(y & (1 << 16 - 1)){y = y - (1<<16);}
-        let z = zL + (zH << 8);
-        if(z & (1 << 16 - 1)){z = z - (1<<16);}
+          let x = xL + (xH << 8);
+          if(x & (1 << 16 - 1)){x = x - (1<<16);}
+          let y = yL + (yH << 8);
+          if(y & (1 << 16 - 1)){y = y - (1<<16);}
+          let z = zL + (zH << 8);
+          if(z & (1 << 16 - 1)){z = z - (1<<16);}
 
-        const EARTH_GRAVITY_MS2=9.80665;
-        const SCALE_MULTIPLIER=0.004;
+          const EARTH_GRAVITY_MS2=9.80665;
+          const SCALE_MULTIPLIER=0.004;
 
-        x = x*SCALE_MULTIPLIER;
-        y = y*SCALE_MULTIPLIER;
-        z = z*SCALE_MULTIPLIER;
+          x = x*SCALE_MULTIPLIER;
+          y = y*SCALE_MULTIPLIER;
+          z = z*SCALE_MULTIPLIER;
 
-        x = x*EARTH_GRAVITY_MS2;
-        y = y*EARTH_GRAVITY_MS2;
-        z = z*EARTH_GRAVITY_MS2;
+          x = x*EARTH_GRAVITY_MS2;
+          y = y*EARTH_GRAVITY_MS2;
+          z = z*EARTH_GRAVITY_MS2;
 
-        x=Math.round(x*10000)/10000;
-        y=Math.round(y*10000)/10000;
-        z=Math.round(z*10000)/10000;
+          x=Math.round(x*10000)/10000;
+          y=Math.round(y*10000)/10000;
+          z=Math.round(z*10000)/10000;
 
-        const accelerometer = {"x": x, "y": y, "z": z};
+          const accelerometer = {"x": x, "y": y, "z": z};
 
-        resolve(accelerometer);
+          resolve(accelerometer);
+        }catch(e){
+          reject();
+        }
 
       });
     });
@@ -229,13 +276,17 @@ Sensor.prototype = {
   getTemp:function(port,addr){
     return new Promise(function(resolve,reject){
       spawn(function(){
-        const slave = yield port.open(addr);
+        try{
+          const slave = yield port.open(addr);
 
-        const highBit = yield slave.read8(0x00, true);
-        const lowBit = yield slave.read8(0x01, true);
+          const highBit = yield slave.read8(0x00, true);
+          const lowBit = yield slave.read8(0x01, true);
 
-        const temp = ((highBit << 8) + lowBit)/128.0;
-        resolve(temp);
+          const temp = ((highBit << 8) + lowBit)/128.0;
+          resolve(temp);
+        }catch(e){
+          reject();
+        }
 
       });
     });
@@ -243,17 +294,21 @@ Sensor.prototype = {
   getDistance:function(port,addr){
     return new Promise(function(resolve,reject){
       spawn(function(){
-        const slave = yield port.open(addr);
+        try{
+          const slave = yield port.open(addr);
 
-        yield slave.write8(0x00, 0x00);
-        yield sleep(1);
-        yield slave.write8(0x00, 0x51);
-        yield sleep(70);
-        const highBit = yield slave.read8(0x02, true);
-        const lowBit = yield slave.read8(0x03, true);
+          yield slave.write8(0x00, 0x00);
+          yield sleep(1);
+          yield slave.write8(0x00, 0x51);
+          yield sleep(70);
+          const highBit = yield slave.read8(0x02, true);
+          const lowBit = yield slave.read8(0x03, true);
 
-        const distance = (highBit << 8) + lowBit;
-        resolve(distance);
+          const distance = (highBit << 8) + lowBit;
+          resolve(distance);
+        }catch(e){
+          reject();
+        }
 
       });
     });

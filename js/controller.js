@@ -13,7 +13,7 @@ function Controller(config){
   console.log(this.config);
   this.sensors = new Sensor({
     "accelerometer": true,
-    "light": false
+    "light": true
   });
   this.previousValues=null;
 }
