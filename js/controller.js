@@ -1,4 +1,8 @@
+/*
+Copyright (c) 2017 CHIRIMEN Open Hardware
 
+Licensed under the MIT License
+*/
 function Controller(config){
   console.log("new controller");
   this.defaultconfig = {};

@@ -1,4 +1,8 @@
-// task.js ライブラリ
+/*
+Copyright (c) 2017 CHIRIMEN Open Hardware
+
+Licensed under the MIT License
+*/
 const { spawn, sleep } = task;
 function Sensor(settings){
   this.settings = settings;
@@ -216,7 +220,7 @@ Sensor.prototype = {
         z=Math.round(z*10000)/10000;
 
         const accelerometer = {"x": x, "y": y, "z": z};
-  
+
         resolve(accelerometer);
 
       });

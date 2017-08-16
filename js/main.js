@@ -1,5 +1,5 @@
 /*
-   Copyright 2014 Nebez Briefkani
+   Copyright 2014 Nebez Briefkani, 2017 CHIRIMEN Open Hardware
    floppybird - main.js
 
    Licensed under the Apache License, Version 2.0 (the "License");
@@ -62,13 +62,14 @@ var loopController;
 //controller
 var controller;
 $(document).ready(function() {
+  /*
+    controller for CHIRIMEN
+  */
   controller = new Controller({
     "pipeheight":pipeheight,
     "jump":jump,
     "gravity":gravity
   });
-  console.log(controller.config);
-  console.log(controller.config.pipeheight);
 
   navigator.requestGPIOAccess().then(
    function(gpioAccess) {
@@ -109,7 +110,9 @@ $(document).ready(function() {
       });
     },100);
   });
-
+  /*
+    controller for CHIRIMEN
+  */
 
   if(window.location.search == "?debug")
     debugmode = true;
