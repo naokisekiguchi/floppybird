@@ -95,10 +95,10 @@ $(document).ready(function() {
   });
 
   controller.onScreenClick = screenClick();
-  controller.initSensors().then(()=>{
+  controller.sensors.initSensors().then(()=>{
     console.log("resolve");
     loopController = setInterval(function(){
-      controller.getSensor().then((values)=>{
+      controller.sensors.getSensors().then((values)=>{
         if(controller.controller(values)){
           screenClick();
         }
