@@ -99,11 +99,15 @@ $(document).ready(function() {
     console.log("resolve");
     loopController = setInterval(function(){
       controller.sensors.getSensors().then((values)=>{
+        if(!controller.previousValues){
+          controller.previousValues = values;
+        }
         if(controller.controller(values)){
           screenClick();
         }
+        controller.previousValues = values;
       });
-    },1000);
+    },100);
   });
 
 

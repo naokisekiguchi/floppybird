@@ -1,18 +1,22 @@
 
 function Controller(config){
   console.log("new controller");
+  this.defaultconfig = {};
+  for(let i in config){
+    this.defaultconfig[i] = config[i];
+  }
   this.config = config;
   console.log(this.config);
   this.sensors = new Sensor({
     "accelerometer": true,
-    "light": true
+    "light": false
   });
+  this.previousValues=null;
 }
 
 Controller.prototype = {
   controller:function(values){
-    var isClick = true;
-
+    let isClick = false;
 
 
     return isClick;
