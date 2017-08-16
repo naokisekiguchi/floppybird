@@ -6,7 +6,7 @@ function Sensor(settings){
 }
 Sensor.prototype = {
   initSensors:function(){
-    var self = this;
+    const self = this;
     return new Promise(function(resolve,reject){
       spawn(function() {
         // I2C へのアクセサを取得
@@ -24,24 +24,43 @@ Sensor.prototype = {
     });
   },
   getSensors:function(){
-    var self = this;
+    const self = this;
     return new Promise(function(resolve,reject){
       spawn(function(){
-        let lux,accelerometer,color,touch;
-        //const temp = yield getTemp(port,0x48);
-        //const distance = yield getDistance(port,0x70);
-        if(self.settings.light){lux = yield self.getLight(self.port,0x29);}
-        if(self.settings.accelerometer){accelerometer = yield self.getAccelerometer(self.port,0x53);}
+        const values = new Object();
+        if(self.settings.temp){
+          const temp = yield self.getTemp(port,0x48);
+          console.log("temp: "+temp);
+          values.temp = temp;
+        }
+        if(self.settings.distance){
+          const distance = yield self.getDistance(port,0x70);
+          console.log("distance: "+distance);
+          values.distance = distance;
+        }
+        if(self.settings.light){
+          const lux = yield self.getLight(self.port,0x29);
+          console.log("lux: "+lux);
+          values.light = lux;
+        }
+        if(self.settings.accelerometer){
+          const accelerometer = yield self.getAccelerometer(self.port,0x53);
+          console.log("accelerometer: " + accelerometer.x + ","+ accelerometer.y + ","+ accelerometer.z);
+          values.accelerometer = accelerometer;
+        }
+        if(self.settings.color){
+          //ToDo get color value
+          const color = null;
+          console.log("color: "+color);
+          values.color = color;
+        }
+        if(self.settings.touch){
+          const touch = null;
+          console.log("accelerometer: " + accelerometer.x + ","+ accelerometer.y + ","+ accelerometer.z);
+          values.touch = touch;
+        }
 
-        // 確認用に console.log に表示
-        //console.log("temp: "+temp);
-        //console.log("distance: "+distance);
-        if(self.settings.light){console.log("lux: "+lux);}
-        if(self.settings.accelerometer){console.log("accelerometer: " + accelerometer.x + ","+ accelerometer.y + ","+ accelerometer.z);}
-        resolve({
-          "light":lux,
-          "accelerometer":accelerometer
-        });
+        resolve(values);
       });
     });
   },
@@ -65,7 +84,7 @@ Sensor.prototype = {
     });
   },
   getLight:function(port,addr){
-    var self=this;
+    const self=this;
     return new Promise(function(resolve,reject){
       spawn(function(){
         const slave = yield port.open(addr);
@@ -181,8 +200,6 @@ Sensor.prototype = {
         let z = zL + (zH << 8);
         if(z & (1 << 16 - 1)){z = z - (1<<16);}
 
-        console.log(x);
-
         const EARTH_GRAVITY_MS2=9.80665;
         const SCALE_MULTIPLIER=0.004;
 
@@ -199,8 +216,7 @@ Sensor.prototype = {
         z=Math.round(z*10000)/10000;
 
         const accelerometer = {"x": x, "y": y, "z": z};
-        console.log(accelerometer.x);
-
+  
         resolve(accelerometer);
 
       });
