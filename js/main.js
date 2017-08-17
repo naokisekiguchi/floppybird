@@ -95,19 +95,26 @@ $(document).ready(function() {
    console.log("Failed to get GPIO access catch: " + error.message);
   });
 
+  function loopControllerFunction(){
+    controller.sensors.getSensors().then((values)=>{
+      if(controller.controller(values)){
+        screenClick();
+      }
+      controller.previousValues = values;
+      loopController = setTimeout(function(){
+        loopControllerFunction();
+      },30);
+
+    });
+  }
   controller.onScreenClick = screenClick();
   controller.sensors.initSensors().then(()=>{
-    loopController = setInterval(function(){
-      controller.sensors.getSensors().then((values)=>{
-        if(!controller.previousValues){
-          controller.previousValues = values;
-        }
-        if(controller.controller(values)){
-          screenClick();
-        }
+    controller.sensors.getSensors().then((values)=>{
+      if(!controller.previousValues){
         controller.previousValues = values;
-      });
-    },100);
+      }
+      loopControllerFunction();
+    });
   });
   /*
     controller for CHIRIMEN

@@ -24,7 +24,9 @@ Sensor.prototype = {
   },
   showValue:function(id,mes){
     var ele = document.querySelector("#"+id);
-    ele.innerHTML = mes;
+    if(ele){
+      ele.innerHTML = mes;
+    }
   },
   initSensors:function(){
     const self = this;
@@ -152,7 +154,8 @@ Sensor.prototype = {
           const slave = yield port.open(addr);
 
           yield slave.write8(0x80,0x03);
-          yield sleep(14);
+          //yield sleep(14);
+          yield sleep(1);
 
 
           const ch0H = yield slave.read8(0x8d,true);
@@ -253,7 +256,8 @@ Sensor.prototype = {
           const slave = yield port.open(addr);
 
           yield slave.write8(0x80,0x03);
-          yield sleep(14);
+          //yield sleep(14);
+          yield sleep(1);
 
           const xL = yield slave.read8(0x32,true);
           const xH = yield slave.read8(0x33,true);
