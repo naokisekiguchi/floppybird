@@ -13,7 +13,8 @@ function Controller(config){
   console.log(this.config);
   this.sensors = new Sensor({
     "accelerometer": true,
-    "light": true
+    "light": true,
+    "dom":"sensorheader"
   });
   this.previousValues=null;
 }
@@ -21,6 +22,8 @@ function Controller(config){
 Controller.prototype = {
   controller:function(values){
     let isClick = false;
+
+    this.setPipeHeight(values.light);
 
 
     return isClick;

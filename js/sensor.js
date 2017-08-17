@@ -7,8 +7,25 @@ const { spawn, sleep } = task;
 function Sensor(settings){
   this.settings = settings;
   this.port = null;
+  if(this.settings.dom){
+    this.createDoms(this.settings.dom);
+  }
 }
 Sensor.prototype = {
+  createDoms:function(id){
+    var parent = document.getElementById(id);
+    for(var i in this.settings){
+      if(i != "dom" && this.settings[i]){
+        var ele = document.createElement("div");
+        ele.id = i;
+        parent.appendChild(ele);
+      }
+    }
+  },
+  showValue:function(id,mes){
+    var ele = document.querySelector("#"+id);
+    ele.innerHTML = mes;
+  },
   initSensors:function(){
     const self = this;
     return new Promise(function(resolve,reject){
@@ -44,6 +61,7 @@ Sensor.prototype = {
           try{
             const temp = yield self.getTemp(port,0x48);
             console.log("temp: "+temp);
+            self.showValue("temp","temp: "+temp);
             values.temp = temp;
           }catch(e){
             self.settings.temp = false;
@@ -54,6 +72,7 @@ Sensor.prototype = {
             const distance = yield self.getDistance(port,0x70);
             console.log("distance: "+distance);
             values.distance = distance;
+            self.showValue("distance","distance: "+distance);
           }catch(e){
             self.settings.distance = false;
           }
@@ -63,6 +82,7 @@ Sensor.prototype = {
             const lux = yield self.getLight(self.port,0x29);
             console.log("lux: "+lux);
             values.light = lux;
+            self.showValue("light","lux: "+lux);
           }catch(e){
             self.settings.light = false;
           }
@@ -72,6 +92,7 @@ Sensor.prototype = {
             const accelerometer = yield self.getAccelerometer(self.port,0x53);
             console.log("accelerometer: " + accelerometer.x + ","+ accelerometer.y + ","+ accelerometer.z);
             values.accelerometer = accelerometer;
+            self.showValue("accelerometer","accelerometer: " + accelerometer.x + ","+ accelerometer.y + ","+ accelerometer.z);
           }catch(e){
             self.settings.accelerometer = false;
           }
