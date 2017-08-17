@@ -6,6 +6,15 @@ Licensed under the MIT License
 const { spawn, sleep } = task;
 function Sensor(settings){
   this.settings = settings;
+  let self = this;
+  this.info = {
+    "temp"         :{"init":null,"get":self.getTemp,"addr":0x48},
+    "distance"     :{"init":null,"get":self.getDistance,"addr":0x70},
+    "light"        :{"init":self.groveLightInit,"get":self.getLight,"addr":0x29},
+    "accelerometer":{"init":self.groveAccelerometerInit,"get":self.getAccelerometer,"addr":0x53},
+    "color"        :{"init":self.groveColorInit,"get":self.getColor,"addr":0x39},
+    "touch"        :{"init":self.groveTouchInit,"get":self.getTouch,"addr":0x5a}
+  }
   this.port = null;
   if(this.settings.dom){
     this.createDoms(this.settings.dom);
@@ -25,6 +34,7 @@ Sensor.prototype = {
     }
   },
   showValue:function(id,mes){
+    console.log(mes);
     var ele = document.querySelector("#"+id);
     if(ele){
       ele.innerHTML = mes;
@@ -75,62 +85,34 @@ Sensor.prototype = {
     return new Promise(function(resolve,reject){
       spawn(function(){
         const values = new Object();
-        if(self.settings.temp){
-          try{
-            const temp = yield self.getTemp(port,0x48);
-            console.log("temp: "+temp);
-            self.showValue("temp","temp: "+temp);
-            values.temp = temp;
-          }catch(e){
-            self.settings.temp = false;
-          }
-        }
-        if(self.settings.distance){
-          try{
-            const distance = yield self.getDistance(port,0x70);
-            console.log("distance: "+distance);
-            values.distance = distance;
-            self.showValue("distance","distance: "+distance);
-          }catch(e){
-            self.settings.distance = false;
-          }
-        }
-        if(self.settings.light){
-          try{
-            const lux = yield self.getLight(self.port,0x29);
-            console.log("lux: "+lux);
-            values.light = lux;
-            self.showValue("light","lux: "+lux);
-          }catch(e){
-            self.settings.light = false;
-          }
-        }
-        if(self.settings.accelerometer){
-          try{
-            const accelerometer = yield self.getAccelerometer(self.port,0x53);
-            console.log("accelerometer: " + accelerometer.x + ","+ accelerometer.y + ","+ accelerometer.z);
-            values.accelerometer = accelerometer;
-            self.showValue("accelerometer","accelerometer: " + accelerometer.x + ","+ accelerometer.y + ","+ accelerometer.z);
-          }catch(e){
-            self.settings.accelerometer = false;
-          }
-        }
-        if(self.settings.color){
-          try{
-            const color = yield self.getColor(self.port,0x39);
-            console.log("color: "+color);
-            values.color = color;
-          }catch(e){
-            self.settings.color = false;
-          }
-        }
-        if(self.settings.touch){
-          try{
-            const touch = yield self.getTouch(self.port,0x5a);;
-            console.log(JSON.stringify(touch));
-            values.touch = touch;
-          }catch(e){
-            self.settings.touch = false;
+
+        for(var i in self.settings){
+          if(i != "dom" && self.settings[i]){
+            try{
+              values[i] = yield self.info[i].get(self.port,self.info[i].addr);
+              switch(i){
+                case "temp":
+                  self.showValue(i,"temp: "+values[i]);
+                  break;
+                case "distance":
+                  self.showValue(i,"distance: "+values[i]);
+                  break;
+                case "light":
+                  self.showValue(i,"light: "+values[i]);
+                  break;
+                case "accelerometer":
+                  self.showValue(i,"accelerometer: " + values[i].x + ","+ values[i].y + ","+ values[i].z);
+                  break;
+                case "color":
+                  self.showValue(i,"color: "+values[i]);
+                  break;
+                case "touch":
+                  self.showValue(i,"touch: "+JSON.stringify(values[i]));
+                  break;
+              }
+            }catch(e){
+              self.settings[i] = false;
+            }
           }
         }
 
