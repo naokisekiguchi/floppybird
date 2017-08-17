@@ -10,6 +10,8 @@ function Sensor(settings){
   if(this.settings.dom){
     this.createDoms(this.settings.dom);
   }
+
+  this.ledStatus = 1;
 }
 Sensor.prototype = {
   createDoms:function(id){
@@ -48,6 +50,20 @@ Sensor.prototype = {
             yield self.groveAccelerometerInit(self.port,0x53);
           }catch(e){
             self.settings.accelerometer = false;
+          }
+        }
+        if(self.settings.color){
+          try{
+            yield self.groveColorInit(self.port,0x39);
+          }catch(e){
+            self.settings.color = false;
+          }
+        }
+        if(self.settings.touch){
+          try{
+            yield self.groveTouchInit(self.port,0x5a);
+          }catch(e){
+            self.settings.touch = false;
           }
         }
         resolve();
@@ -101,8 +117,7 @@ Sensor.prototype = {
         }
         if(self.settings.color){
           try{
-            //ToDo get color value
-            const color = null;
+            const color = yield self.getColor(self.port,0x39);
             console.log("color: "+color);
             values.color = color;
           }catch(e){
@@ -111,8 +126,8 @@ Sensor.prototype = {
         }
         if(self.settings.touch){
           try{
-            const touch = null;
-            console.log("accelerometer: " + accelerometer.x + ","+ accelerometer.y + ","+ accelerometer.z);
+            const touch = yield self.getTouch(self.port,0x5a);;
+            console.log(JSON.stringify(touch));
             values.touch = touch;
           }catch(e){
             self.settings.touch = false;
@@ -337,5 +352,224 @@ Sensor.prototype = {
 
       });
     });
+  },
+  groveColorInit: function(port,addr){
+    var self = this;
+    return new Promise(function(resolve, reject){
+      spawn(function(){
+        try{
+          const slave = yield port.open(addr);
+
+          //set timing reg
+          yield slave.write8(0x81,0x00);
+          yield sleep(1);
+          //set interrupt source reg
+          yield slave.write8(0x83,0x03);
+          yield sleep(14);
+          //set interrupt control reg
+          yield slave.write8(0x82,0x10);
+          yield sleep(1);
+          //set gain
+          yield slave.write8(0x87,0x00);
+          yield sleep(1);
+          //set enable adc
+          yield slave.write8(0x80,0x03);
+          yield sleep(1);
+
+          resolve();
+        }catch(e){
+          reject();
+        }
+      });
+    });
+  },
+  clearInterrupt: function(port,addr){
+    var self = this;
+    return new Promise(function(resolve, reject){
+      spawn(function(){
+        try{
+          const slave = yield port.open(addr);
+          yield slave.write8(0xe0,0x00);
+          yield sleep(1);
+          resolve();
+        }catch(e){
+          reject();
+        }
+      });
+    });
+  },
+  calcColor: function(r,g,b){
+    var self = this;
+    var maxColor,tmp;
+    if(self.ledStatus == 1){
+      r = r * 1.70;
+      b = b * 1.35;
+      maxColor = Math.max(r,g);
+      maxColor = Math.max(maxColor,b);
+
+      if(maxColor > 255){
+        tmp = 250.0/maxColor;
+        g *= tmp;
+        r *= tmp;
+        b *= tmp;
+      }
+    }
+    if(self.ledStatus == 0){
+      maxColor = Math.max(r,g);
+      maxColor = Math.mac(maxColor,b);
+
+      tmp = 250.0/maxColor;
+      g *= tmp;
+      r *= tmp;
+      b *= tmp;
+    }
+
+    var minColor = Math.min(r,g);
+    minColor = Math.min(maxColor,b);
+    maxColor = Math.max(r,g);
+    maxColor = Math.max(maxColor,b);
+
+    var gtmp=g;
+    var rtmp=r;
+    var btmp=b;
+
+    if(r < 0.8*maxColor && r >= 0.6*maxColor){
+      r *= 0.4;
+    }else if(r < 0.6*maxColor){
+      r *= 0.2;
+    }
+
+    if(g < 0.8*maxColor && g >= 0.6*maxColor){
+      g *= 0.4;
+    }else if(r < 0.6*maxColor){
+      if(maxColor == rtmp && gtmp >= 2*btmp && gtmp >= 0.2*rtmp){
+        g *= 5;
+      }
+      g *= 0.2;
+    }
+
+    if(b < 0.8*maxColor && b >= 0.6*maxColor){
+      b *= 0.4;
+    }else if(b < 0.6*maxColor){
+      if(maxColor == rtmp && gtmp >= 2*btmp && gtmp >= 0.2*rtmp){
+        g *= 0.5;
+      }
+      if(maxColor == rtmp && gtmp <= btmp && btmp >= 0.2*rtmp){
+        b *= 5;
+      }
+      b *= 0.2;
+    }
+
+    minColor = Math.min(r,g);
+    minColor = Math.min(maxColor,b);
+    if(maxColor == g && r >= 0.85*maxColor && minColor == b){
+      r = maxColor;
+      b *= 0.4;
+    }
+
+    return {red:r,green:g,blue:b};
+  },
+  getColor: function(port,addr){
+    var self = this;
+    return new Promise(function(resolve, reject){
+      spawn(function(){
+        try{
+          const slave = yield port.open(addr);
+
+          yield slave.write8(0xd0,0x00);
+          yield sleep(1);
+
+          const v = [];
+          // get light value
+          v[0] = yield slave.read8(0xd0,true),
+          v[1] = yield slave.read8(0xd1,true),
+          v[2] = yield slave.read8(0xd2,true),
+          v[3] = yield slave.read8(0xd3,true),
+          v[4] = yield slave.read8(0xd4,true),
+          v[5] = yield slave.read8(0xd5,true),
+          v[6] = yield slave.read8(0xd6,true),
+          v[7] = yield slave.read8(0xd7,true)
+
+          const g = v[1]*256 + v[0];
+          const r = v[3]*256 + v[2];
+          const b = v[5]*256 + v[4];
+          const c = v[7]*256 + v[6];
+          resolve(self.calcColor(r,g,b));
+
+        }catch(e){
+          reject();
+        }
+      });
+    });
+  },
+  groveTouchInit:function(port,addr){
+    var self = this;
+    return new Promise(function(resolve, reject){
+      spawn(function(){
+        try{
+          const slave = yield port.open(addr);
+
+          yield slave.write8(0x2b,0x01);
+          yield sleep(1);
+          yield slave.write8(0x2c,0x01);
+          yield sleep(1);
+          yield slave.write8(0x2d,0x01);
+          yield sleep(1);
+          yield slave.write8(0x2e,0x01);
+          yield sleep(1);
+
+          yield slave.write8(0x2f,0x01);
+          yield sleep(1);
+          yield slave.write8(0x30,0x01);
+          yield sleep(1);
+          yield slave.write8(0x31,0xff);
+          yield sleep(1);
+          yield slave.write8(0x32,0x02);
+          yield sleep(1);
+
+
+          for(var i=0;i<12*2;i+=2){
+            var address = 0x41+i;
+            yield slave.write8(address,0x0f);
+            yield sleep(1);
+            yield slave.write8(address+1,0x0a);
+            yield sleep(1);
+          }
+
+
+          yield slave.write8(0x5d,0x04);
+          yield sleep(1);
+          yield slave.write8(0x5e,0x0c);
+          yield sleep(1);
+
+          resolve();
+        }catch(e){
+          reject();
+        }
+      });
+    });
+  },
+  getTouch:function(port,addr){
+    var self = this;
+    return new Promise(function(resolve, reject){
+      spawn(function(){
+        try{
+          const slave = yield port.open(addr);
+
+          const L =  yield slave.read8(0x00,true);
+          const H =  yield slave.read8(0x01,true);
+          var value = ((H << 8) + L);
+          var array = self.arrayFromMask(value);
+          resolve(array);
+        }catch(e){
+          reject();
+        }
+      });
+    });
+  },
+  arrayFromMask:function arrayFromMask (nMask) {
+    if (nMask > 0x7fffffff || nMask < -0x80000000) { throw new TypeError("arrayFromMask - out of range"); }
+    for (var nShifted = nMask, aFromMask = []; nShifted; aFromMask.push(Boolean(nShifted & 1)), nShifted >>>= 1);
+    return aFromMask;
   }
 }
