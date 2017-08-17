@@ -3,7 +3,13 @@ Copyright (c) 2017 CHIRIMEN Open Hardware
 
 Licensed under the MIT License
 */
-function Controller(config){
+function Controller(){
+
+  var config = {
+    "pipeheight":150, //初期値　150
+    "jump":-4.6,      //初期値　-4.6
+    "gravity":0.25    //初期値　0.25
+  }
   console.log("new controller");
   this.defaultconfig = {};
   for(let i in config){
@@ -11,12 +17,17 @@ function Controller(config){
   }
   this.config = config;
   console.log(this.config);
+  this.previousValues=null;
+
   this.sensors = new Sensor({
     "accelerometer": true,
     "light": true,
     "dom":"sensorheader"
   });
-  this.previousValues=null;
+
+  this.setPipeHeight(this.config.pipeheight);
+  this.setJump(this.config.jump);
+  this.setGravity(this.config.gravity);      
 }
 
 Controller.prototype = {
@@ -41,7 +52,7 @@ Controller.prototype = {
     if(values.light < 100){
       isClick = true;
     }
-    
+
     /*
     //x軸加速度の変化量が10以上だったらジャンプする（加速度センサを振ったらジャンプする）
     if(Math.abs(values.accelerometer.x - this.previousValues.accelerometer.x) > 2){

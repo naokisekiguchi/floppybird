@@ -65,11 +65,7 @@ $(document).ready(function() {
   /*
     controller for CHIRIMEN
   */
-  controller = new Controller({
-    "pipeheight":pipeheight,
-    "jump":jump,
-    "gravity":gravity
-  });
+  controller = new Controller();
 
   navigator.requestGPIOAccess().then(
    function(gpioAccess) {
