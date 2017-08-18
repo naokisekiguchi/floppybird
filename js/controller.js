@@ -22,12 +22,14 @@ function Controller(){
   this.sensors = new Sensor({
     "accelerometer": true,
     "light": true,
+    "touch": true,
+    "color": false,
     "dom":"sensorheader"
   });
 
   this.setPipeHeight(this.config.pipeheight);
   this.setJump(this.config.jump);
-  this.setGravity(this.config.gravity);      
+  this.setGravity(this.config.gravity);
 }
 
 Controller.prototype = {

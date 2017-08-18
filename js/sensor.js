@@ -12,7 +12,7 @@ function Sensor(settings){
     "distance"     :{"init":null,"get":self.getDistance,"addr":0x70},
     "light"        :{"init":self.groveLightInit,"get":self.getLight,"addr":0x29},
     "accelerometer":{"init":self.groveAccelerometerInit,"get":self.getAccelerometer,"addr":0x53},
-    "color"        :{"init":self.groveColorInit,"get":self.getColor,"addr":0x39},
+    "color"        :{"init":self.groveColorInit,"get":self.getColor,"addr":0x29},
     "touch"        :{"init":self.groveTouchInit,"get":self.getTouch,"addr":0x5a}
   }
   this.port = null;
@@ -64,11 +64,12 @@ Sensor.prototype = {
         }
         if(self.settings.color){
           try{
-            yield self.groveColorInit(self.port,0x39);
+            yield self.groveColorInit(self.port,0x29);
           }catch(e){
             self.settings.color = false;
           }
         }
+
         if(self.settings.touch){
           try{
             yield self.groveTouchInit(self.port,0x5a);
@@ -89,7 +90,7 @@ Sensor.prototype = {
         for(var i in self.settings){
           if(i != "dom" && self.settings[i]){
             try{
-              values[i] = yield self.info[i].get(self.port,self.info[i].addr);
+              values[i] = yield self.info[i].get.call(self,self.port,self.info[i].addr);
               switch(i){
                 case "temp":
                   self.showValue(i,"temp: "+values[i]);
@@ -104,7 +105,7 @@ Sensor.prototype = {
                   self.showValue(i,"accelerometer: " + values[i].x + ","+ values[i].y + ","+ values[i].z);
                   break;
                 case "color":
-                  self.showValue(i,"color: "+values[i]);
+                  self.showValue(i,"color: red:"+values[i].red + ",green:"+ values[i].green +",blue:"+values[i].blue);
                   break;
                 case "touch":
                   self.showValue(i,"touch: "+JSON.stringify(values[i]));
@@ -463,6 +464,7 @@ Sensor.prototype = {
 
           const v = [];
           // get light value
+          /*
           v[0] = yield slave.read8(0xd0,true),
           v[1] = yield slave.read8(0xd1,true),
           v[2] = yield slave.read8(0xd2,true),
@@ -471,11 +473,26 @@ Sensor.prototype = {
           v[5] = yield slave.read8(0xd5,true),
           v[6] = yield slave.read8(0xd6,true),
           v[7] = yield slave.read8(0xd7,true)
+          */
+          const RL = yield slave.read8(0x80 | 0x16,true);
+          const RH = yield slave.read8(0x80 | 0x17,true);
+          const GL = yield slave.read8(0x80 | 0x18,true);
+          const GH = yield slave.read8(0x80 | 0x19,true);
+          const BL = yield slave.read8(0x80 | 0x1A,true);
+          const BH = yield slave.read8(0x80 | 0x1B,true);
+          const CL = yield slave.read8(0x80 | 0x14,true);
+          const CH = yield slave.read8(0x80 | 0x15,true);
 
-          const g = v[1]*256 + v[0];
+          /*const g = v[1]*256 + v[0];
           const r = v[3]*256 + v[2];
           const b = v[5]*256 + v[4];
           const c = v[7]*256 + v[6];
+          */
+          const c = CH*256 + CL;
+          const r = RH*256 + RL;
+          const g = GH*256 + GL;
+          const b = BH*256 + BL;
+          //resolve({red:r,green:g,blue:b});
           resolve(self.calcColor(r,g,b));
 
         }catch(e){
