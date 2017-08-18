@@ -38,6 +38,12 @@ Controller.prototype = {
   values.accelerometer.x:加速度センサのx軸の値
   values.accelerometer.y:加速度センサのy軸の値
   values.accelerometer.z:加速度センサのz軸の値
+  values.color.red:カラーセンサの赤の値
+  values.color.green:カラーセンサの緑の値
+  values.color.blue:カラーセンサの青の値
+  values.touch:タッチセンサーの値（配列）
+  [false,false,true,,,]のようにタッチした部分がtrueになる配列が入る
+
 
 
   this.previousValues:一つ前に取得したセンサの値
@@ -45,13 +51,18 @@ Controller.prototype = {
   this.previousValues.accelerometer.x:一つ前に取得した加速度センサのx軸の値
   this.previousValues.accelerometer.y:一つ前に取得した加速度センサのy軸の値
   this.previousValues.accelerometer.z:一つ前に取得した加速度センサのz軸の値
+  this.previousValues.values.color.red:カラーセンサの赤の値
+  this.previousValues.values.color.green:カラーセンサの緑の値
+  this.previousValues.values.color.blue:カラーセンサの青の値
+  this.previousValues.values.touch:タッチセンサーの値（配列）
+  [false,false,true,,,]のようにタッチした部分がtrueになる配列が入る
   */
   controller:function(values){
     let isClick = false;
 
 
     //暗くなったらジャンプする
-    if(values.light < 100){
+    if(values.accelerometer.x < 0){
       isClick = true;
     }
 
