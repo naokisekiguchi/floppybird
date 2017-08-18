@@ -61,7 +61,7 @@ Controller.prototype = {
     let isClick = false;
 
 
-    //暗くなったらジャンプする
+    //加速度センサを傾けたらジャンプする（x軸加速度が負になったらジャンプする）
     if(values.accelerometer.x < 0){
       isClick = true;
     }
